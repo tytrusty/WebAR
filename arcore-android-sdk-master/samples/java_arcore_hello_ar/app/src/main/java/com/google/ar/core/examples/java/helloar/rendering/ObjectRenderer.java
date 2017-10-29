@@ -19,9 +19,12 @@ import com.google.ar.core.examples.java.helloar.R;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
+import android.util.Log;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -111,24 +114,26 @@ public class ObjectRenderer {
      * @param diffuseTextureAssetName  Name of the PNG file containing the diffuse texture map.
      */
     public void createOnGlThread(Context context, String objAssetName,
-                                 String diffuseTextureAssetName) throws IOException {
+                                 String diffuseTextureAssetName, int id) throws IOException {
+        Log.i("FUKU", "ID: " + id);
         // Read the texture.
-        Bitmap textureBitmap = BitmapFactory.decodeStream(
-            context.getAssets().open(diffuseTextureAssetName));
+        //Bitmap textureBitmap = BitmapFactory.decodeStream(
+        //    context.getAssets().open(diffuseTextureAssetName));
 
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glGenTextures(mTextures.length, mTextures, 0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTextures[0]);
+        //GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        //GLES20.glGenTextures(mTextures.length, mTextures, 0);
+        //GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTextures[0]);
+//
+//        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
+//            GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR_MIPMAP_LINEAR);
+//        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
+//            GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        //GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, textureBitmap, 0);
+        //GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D);
+        //GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
 
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
-            GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR_MIPMAP_LINEAR);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
-            GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-//        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, textureBitmap, 0);
-//        GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+        //textureBitmap.recycle();
 
-        textureBitmap.recycle();
 
         ShaderUtil.checkGLError(TAG, "Texture loading");
 
@@ -193,9 +198,12 @@ public class ObjectRenderer {
 
         final int vertexShader = ShaderUtil.loadGLShader(TAG, context,
                 GLES20.GL_VERTEX_SHADER, R.raw.object_vertex);
+//        final int fragmentShader = ShaderUtil.loadGLShader(TAG, context,
+//                GLES20.GL_FRAGMENT_SHADER, R.raw.object_fragment);
+//        final int vertexShader = ShaderUtil.loadGLShader(TAG, context,
+//                GLES20.GL_VERTEX_SHADER, R.raw.per_pixel_vertex_shader);
         final int fragmentShader = ShaderUtil.loadGLShader(TAG, context,
-                GLES20.GL_FRAGMENT_SHADER, R.raw.object_fragment);
-
+                GLES20.GL_FRAGMENT_SHADER, R.raw.custom_fragment);
         mProgram = GLES20.glCreateProgram();
         GLES20.glAttachShader(mProgram, vertexShader);
         GLES20.glAttachShader(mProgram, fragmentShader);
@@ -276,7 +284,8 @@ public class ObjectRenderer {
      * @see #setMaterialProperties(float, float, float, float)
      * @see android.opengl.Matrix
      */
-    public void draw(float[] cameraView, float[] cameraPerspective, float lightIntensity) {
+    public void draw(float[] cameraView, float[] cameraPerspective, float lightIntensity,
+                     int textureID) {
 
         ShaderUtil.checkGLError(TAG, "Before draw");
 
@@ -298,8 +307,12 @@ public class ObjectRenderer {
             mSpecularPower);
 
         // Attach the object texture.
+//        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+//        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTextures[0]);
+//        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,  textureID);
+
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,  textureID);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTextures[0]);
         GLES20.glUniform1i(mTextureUniform, 0);
 
         // Set the vertex attributes.

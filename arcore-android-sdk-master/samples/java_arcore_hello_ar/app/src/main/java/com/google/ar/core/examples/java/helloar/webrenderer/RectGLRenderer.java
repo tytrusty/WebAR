@@ -17,7 +17,9 @@ import com.google.ar.core.PlaneHitResult;
 import com.google.ar.core.Session;
 import com.google.ar.core.examples.java.helloar.GLRenderable;
 import com.google.ar.core.examples.java.helloar.HelloArActivity;
+import com.google.ar.core.examples.java.helloar.R;
 import com.google.ar.core.examples.java.helloar.ViewToGLRenderer;
+import com.google.ar.core.examples.java.helloar.cuberenerer.RawResourceReader;
 import com.google.ar.core.examples.java.helloar.rendering.BackgroundRenderer;
 import com.google.ar.core.examples.java.helloar.rendering.ObjectRenderer;
 import com.google.ar.core.examples.java.helloar.rendering.PlaneAttachment;
@@ -74,8 +76,11 @@ public class RectGLRenderer extends ViewToGLRenderer{
         mQueuedSingleTaps.offer(e);
     }
 
+
+
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+        super.onSurfaceCreated(gl, config);
         GLES20.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
 
@@ -85,12 +90,15 @@ public class RectGLRenderer extends ViewToGLRenderer{
 
         // Prepare the other rendering objects.
         try {
-            mVirtualObject.createOnGlThread(/*context=*/mContext, "squarePlane.obj", "andy.png");
+            Log.i("FUKU", "ID: " + getGLSurfaceTexture());
+            regenerateTexture();
+            Log.i("FUKU", "ID: " + getGLSurfaceTexture());
+            mVirtualObject.createOnGlThread(/*context=*/mContext, "squarePlane.obj", "andy.png", getGLSurfaceTexture());
             //mVirtualObject.createOnGlThread(/*context=*/this, "andy.obj", "andy.png");
             mVirtualObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f);
 
             mVirtualObjectShadow.createOnGlThread(/*context=*/mContext,
-                    "andy_shadow.obj", "andy_shadow.png");
+                    "andy_shadow.obj", "andy_shadow.png", getGLSurfaceTexture());
             mVirtualObjectShadow.setBlendMode(BlendMode.Shadow);
             mVirtualObjectShadow.setMaterialProperties(1.0f, 0.0f, 0.0f, 1.0f);
         } catch (IOException e) {
@@ -106,14 +114,20 @@ public class RectGLRenderer extends ViewToGLRenderer{
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
+        super.onSurfaceChanged(gl, width, height);
         GLES20.glViewport(0, 0, width, height);
         // Notify ARCore session that the view size changed so that the perspective matrix and
         // the video background can be properly adjusted.
         mSession.setDisplayGeometry(width, height);
+
+        // call supper onSurfaceChange
+        // which will update the current texture
+        // with this new texture, reapply to the mVirtualObject
     }
 
     @Override
     public void onDrawFrame(GL10 gl) {
+        super.onDrawFrame(gl);
         // Clear screen to notify driver it should not load any pixels from previous frame.
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 
@@ -198,11 +212,12 @@ public class RectGLRenderer extends ViewToGLRenderer{
                 planeAttachment.getPose().toMatrix(mAnchorMatrix, 0);
 
                 // Update and draw the model and its shadow.
-                getGLSurfaceTexture()
+                getGLSurfaceTexture();
+                regenerateTexture();
                 mVirtualObject.updateModelMatrix(mAnchorMatrix, scaleFactor);
                 mVirtualObjectShadow.updateModelMatrix(mAnchorMatrix, scaleFactor);
-                mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
-                mVirtualObjectShadow.draw(viewmtx, projmtx, lightIntensity);
+                mVirtualObject.draw(viewmtx, projmtx, lightIntensity, getGLSurfaceTexture());
+                mVirtualObjectShadow.draw(viewmtx, projmtx, lightIntensity, getGLSurfaceTexture());
             }
 
         } catch (Throwable t) {
